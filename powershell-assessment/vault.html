@@ -1,0 +1,890 @@
+<title>PowerShell Results Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --ink: #161b24;
+  --muted: #5a6372;
+  --line: #d8dde5;
+  --line-strong: #c3cad5;
+  --accent: #1f5fbf;
+  --accent-soft: #e3ecfa;
+  --accent-ink: #ffffff;
+  --console-bg: #012456;
+  --console-ink: #eef1f7;
+  --console-muted: #9fb3d9;
+  --code-bg: #f3f5f8;
+  --ok: #1f7a48;
+  --ok-soft: #e1f2e8;
+  --warn: #9a5c00;
+  --warn-soft: #fbefd9;
+  --bad: #b3312a;
+  --bad-soft: #f8e2e0;
+  --tok-kw: #8a2d9c;
+  --tok-cmd: #1f5fbf;
+  --tok-var: #a1470d;
+  --tok-str: #1f7a48;
+  --tok-com: #7a8392;
+  --tok-op: #5a6372;
+  --tok-type: #0f7a8a;
+  --tok-num: #a1470d;
+  --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 4px 16px rgba(20, 30, 50, .06);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e1218; --surface: #151a22; --surface-2: #1b212b; --ink: #e4e8ef; --muted: #95a0b0;
+    --line: #29303b; --line-strong: #3a4250; --accent: #6ea3f5; --accent-soft: #1b2a44; --accent-ink: #0b1220;
+    --console-bg: #081a3d; --console-ink: #eef1f7; --console-muted: #8ea3cc; --code-bg: #10151c;
+    --ok: #52c486; --ok-soft: #15301f; --warn: #e3a643; --warn-soft: #33260f; --bad: #f06c62; --bad-soft: #3a1a18;
+    --tok-kw: #d59bea; --tok-cmd: #7fb0ff; --tok-var: #f0a36b; --tok-str: #8fd19e; --tok-com: #6d7888;
+    --tok-op: #a8b2c1; --tok-type: #62c9d6; --tok-num: #f0a36b;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1218; --surface: #151a22; --surface-2: #1b212b; --ink: #e4e8ef; --muted: #95a0b0;
+  --line: #29303b; --line-strong: #3a4250; --accent: #6ea3f5; --accent-soft: #1b2a44; --accent-ink: #0b1220;
+  --console-bg: #081a3d; --console-ink: #eef1f7; --console-muted: #8ea3cc; --code-bg: #10151c;
+  --ok: #52c486; --ok-soft: #15301f; --warn: #e3a643; --warn-soft: #33260f; --bad: #f06c62; --bad-soft: #3a1a18;
+  --tok-kw: #d59bea; --tok-cmd: #7fb0ff; --tok-var: #f0a36b; --tok-str: #8fd19e; --tok-com: #6d7888;
+  --tok-op: #a8b2c1; --tok-type: #62c9d6; --tok-num: #f0a36b;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; text-wrap: balance; font-weight: 600; }
+p { margin: 0; }
+code, pre, .mono { font-family: var(--mono); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabnums { font-variant-numeric: tabular-nums; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 38px; padding: 0 16px; border-radius: 6px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  font-weight: 500; font-size: 14px; cursor: pointer; white-space: nowrap;
+  transition: background .12s, border-color .12s;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--muted); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); border-color: var(--accent); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); border-color: transparent; }
+.btn.sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn.flag-on { border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
+
+.label {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
+  border-radius: 999px; font-size: 12.5px; font-weight: 500;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
+  white-space: nowrap;
+}
+.chip strong { color: var(--ink); font-weight: 600; }
+
+/* ---------- Intro ---------- */
+.intro { padding-inline: 16px; padding-block: 40px 56px; }
+.intro-card {
+  max-width: 880px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--shadow); overflow: hidden;
+}
+.intro-head { padding: 32px 36px 28px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.prompt-line { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.prompt-line b { color: var(--accent); font-weight: 500; }
+.intro-head h1 { font-size: 30px; letter-spacing: -.01em; }
+.intro-head p { color: var(--muted); max-width: 62ch; }
+.intro-body { padding: 28px 36px 32px; display: grid; gap: 28px; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fact { background: var(--surface); padding: 14px 18px; display: grid; gap: 2px; }
+.fact .v { font-family: var(--mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.plan-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.plan-table th { text-align: left; font-weight: 600; font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 0 12px 8px 0; border-bottom: 1px solid var(--line); }
+.plan-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.plan-table td.n, .plan-table th.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); padding-right: 0; padding-left: 12px; }
+.plan-table tr:last-child td { border-bottom: 0; }
+.plan-table .qn { font-family: var(--mono); color: var(--muted); width: 36px; }
+.rules { display: grid; gap: 8px; padding-left: 18px; margin: 0; color: var(--ink); }
+.rules li::marker { color: var(--muted); }
+.start-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 24px; }
+.field { display: grid; gap: 6px; flex: 1 1 260px; max-width: 360px; }
+.input {
+  height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--ink); font: inherit;
+}
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.intro-foot { max-width: 880px; margin: 14px auto 0; display: flex; justify-content: flex-end; }
+.table-wrap { overflow-x: auto; }
+
+/* ---------- Test shell ---------- */
+.shell { display: grid; grid-template-rows: auto 1fr; min-height: 100%; }
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; align-items: center; gap: 16px; padding-inline: 20px; padding-block: 10px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.brand .glyph {
+  width: 28px; height: 28px; border-radius: 5px; background: var(--console-bg); color: var(--console-ink);
+  display: grid; place-items: center; font-family: var(--mono); font-size: 13px; font-weight: 600; flex: none;
+}
+.brand .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .c { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timer {
+  display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 10px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--surface-2);
+}
+.timer .clock { font-family: var(--mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.timer .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.timer.warn { border-color: var(--warn); background: var(--warn-soft); }
+.timer.warn .dot, .timer.warn .clock { color: var(--warn); }
+.timer.warn .dot { background: var(--warn); }
+.timer.crit { border-color: var(--bad); background: var(--bad-soft); }
+.timer.crit .clock { color: var(--bad); }
+.timer.crit .dot { background: var(--bad); animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .timer.crit .dot { animation: none; } }
+
+.layout { display: grid; grid-template-columns: 268px minmax(0, 1fr); align-items: start; }
+.sidebar {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + 59px);
+  height: calc(100vh - 59px); overflow-y: auto;
+  border-right: 1px solid var(--line); background: var(--surface);
+  padding: 20px 16px; display: grid; align-content: start; gap: 20px;
+}
+.side-block { display: grid; gap: 10px; }
+.progress-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+.progress-row b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.bar.time > span { background: var(--muted); }
+.qlist { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
+.qbtn {
+  width: 100%; display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center;
+  text-align: left; padding: 9px 10px; border-radius: 6px; border: 1px solid transparent;
+  background: transparent; cursor: pointer;
+}
+.qbtn:hover { background: var(--surface-2); }
+.qbtn.active { background: var(--accent-soft); border-color: var(--accent); }
+.qnum {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 600; font-size: 13px;
+  border: 1.5px solid var(--line-strong); color: var(--muted); background: var(--surface);
+}
+.qbtn[data-state="partial"] .qnum { border-color: var(--warn); color: var(--warn); border-style: dashed; }
+.qbtn[data-state="done"] .qnum { border-color: var(--ok); background: var(--ok); color: #fff; }
+.qmeta { display: grid; min-width: 0; }
+.qmeta .qt { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qmeta .qs { font-size: 12px; color: var(--muted); }
+.qflag { color: var(--warn); font-size: 12px; font-weight: 600; }
+.legend { display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.legend span { display: flex; align-items: center; gap: 8px; }
+.legend i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); display: inline-block; }
+.legend i.p { border-color: var(--warn); border-style: dashed; }
+.legend i.d { border-color: var(--ok); background: var(--ok); }
+
+.main { padding-inline: 32px; padding-block: 28px 48px; display: grid; gap: 24px; max-width: 1100px; width: 100%; }
+.qhead { display: grid; gap: 10px; }
+.qhead h2 { font-size: 24px; letter-spacing: -.005em; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.prose { display: grid; gap: 10px; max-width: 76ch; }
+.prose ul { margin: 0; padding-left: 20px; display: grid; gap: 5px; }
+.prose code, .inline-code { font-family: var(--mono); font-size: .88em; padding: 1px 5px; border-radius: 4px; background: var(--code-bg); border: 1px solid var(--line); }
+
+.io { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.panel { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+.panel-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.code-block {
+  margin: 0; padding: 14px 16px; font-size: 12.8px; line-height: 1.6; overflow-x: auto;
+  background: var(--code-bg); color: var(--ink); white-space: pre; tab-size: 4; flex: 1;
+}
+.console {
+  margin: 0; padding: 14px 16px; font-size: 12.8px; line-height: 1.6; overflow-x: auto;
+  background: var(--console-bg); color: var(--console-ink); white-space: pre; flex: 1;
+}
+.console .ps { color: var(--console-muted); }
+.panel.console-panel .panel-h { background: var(--console-bg); border-bottom-color: rgba(255,255,255,.12); }
+.panel.console-panel .panel-h .label { color: var(--console-muted); }
+.panel.console-panel { border-color: var(--console-bg); }
+
+.t-kw { color: var(--tok-kw); font-weight: 500; }
+.t-cmd { color: var(--tok-cmd); }
+.t-var { color: var(--tok-var); }
+.t-str { color: var(--tok-str); }
+.t-com { color: var(--tok-com); font-style: italic; }
+.t-op { color: var(--tok-op); }
+.t-type { color: var(--tok-type); }
+.t-num { color: var(--tok-num); }
+
+.editor-wrap { display: grid; gap: 8px; }
+.editor-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.editor-head .hint { font-size: 12.5px; color: var(--muted); }
+.editor {
+  display: grid; grid-template-columns: auto 1fr; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--code-bg); overflow: hidden; min-height: 300px;
+}
+.editor:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.gutter {
+  padding: 14px 10px 14px 12px; text-align: right; color: var(--muted); opacity: .7; user-select: none;
+  font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre; overflow: hidden;
+  border-right: 1px solid var(--line); background: var(--surface-2); font-variant-numeric: tabular-nums;
+}
+.editor textarea {
+  width: 100%; min-height: 300px; resize: vertical; border: 0; outline: none; background: transparent;
+  color: var(--ink); padding: 14px 16px; font-family: var(--mono); font-size: 13px; line-height: 1.6;
+  white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 4;
+}
+.editor textarea[readonly] { cursor: default; }
+
+.checkpoint { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 18px 20px; display: grid; gap: 12px; }
+.checkpoint-h { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.checkpoint .qtext { font-weight: 500; max-width: 80ch; }
+.options { display: grid; gap: 8px; }
+.opt {
+  display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: var(--surface);
+}
+.opt:hover { border-color: var(--line-strong); background: var(--surface-2); }
+.opt input { margin: 3px 0 0; accent-color: var(--accent); }
+.opt.sel { border-color: var(--accent); background: var(--accent-soft); }
+.opt.locked { cursor: default; }
+
+.qnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 20px; }
+.qnav .mid { display: flex; gap: 8px; align-items: center; }
+.save-note { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- Modal ---------- */
+.modal-bg { position: fixed; inset: 0; background: rgba(8, 12, 20, .55); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.modal { width: min(480px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 24px; display: grid; gap: 14px; }
+.modal h3 { font-size: 18px; }
+.modal p { color: var(--muted); }
+.modal .actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.modal ul { margin: 0; padding-left: 18px; color: var(--ink); font-size: 14px; display: grid; gap: 4px; }
+.err { color: var(--bad); font-size: 13px; }
+
+/* ---------- Results ---------- */
+.results { padding-inline: 16px; padding-block: 32px 64px; }
+.results-inner { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; }
+.banner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--warn); background: var(--warn-soft); color: var(--warn); font-weight: 500; }
+.summary { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.summary-top { display: grid; grid-template-columns: 1.1fr 2fr; gap: 0; }
+.score-cell { padding: 28px 32px; border-right: 1px solid var(--line); display: grid; gap: 6px; align-content: center; }
+.score-big { font-family: var(--mono); font-size: 56px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.score-big small { font-size: 22px; color: var(--muted); font-weight: 500; }
+.score-note { font-size: 13px; color: var(--muted); max-width: 36ch; }
+.meta-cell { padding: 24px 28px; display: grid; gap: 16px; }
+.meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; }
+.meta-grid div { display: grid; gap: 2px; }
+.meta-grid .v { font-family: var(--mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.split { display: grid; gap: 6px; }
+.split-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.split-bar .a { background: var(--ok); }
+.split-bar .b { background: var(--accent); }
+.split-legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted); }
+.split-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.summary-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--surface-2); }
+.summary-actions .grp { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.score-table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); }
+.score-table th, .score-table td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.score-table th { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--surface-2); }
+.score-table td.n, .score-table th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.score-table tr:last-child td { border-bottom: 0; }
+.score-table tfoot td { font-weight: 600; background: var(--surface-2); }
+.card-table { border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+
+.pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.neutral { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.pill.accent { background: var(--accent-soft); color: var(--accent); }
+
+.review-q { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.review-q > summary { list-style: none; cursor: pointer; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.review-q > summary::-webkit-details-marker { display: none; }
+.review-q > summary h3 { font-size: 16px; }
+.review-q > summary .sum-l { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.review-q > summary .caret { color: var(--muted); font-family: var(--mono); transition: transform .15s; }
+.review-q[open] > summary .caret { transform: rotate(90deg); }
+.review-body { border-top: 1px solid var(--line); padding: 20px; display: grid; gap: 20px; }
+.rev-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.rev-col { display: grid; gap: 10px; min-width: 0; }
+.answer-code { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.answer-code pre { max-height: 420px; overflow: auto; }
+.empty-answer { padding: 18px; color: var(--muted); font-style: italic; background: var(--code-bg); }
+.rubric { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rubric li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: start; font-size: 13.5px; padding: 8px 10px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); }
+.rubric .mk { font-family: var(--mono); font-weight: 700; }
+.rubric .mk.y { color: var(--ok); }
+.rubric .mk.n { color: var(--muted); }
+.rubric .pts { font-family: var(--mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rubric input { margin: 3px 0 0; accent-color: var(--ok); width: 16px; height: 16px; }
+.rubric .ovr { font-size: 11px; color: var(--warn); font-weight: 600; margin-left: 6px; }
+.cp-result { display: grid; gap: 6px; font-size: 13.5px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+.reviewer { border: 1px dashed var(--warn); border-radius: 8px; padding: 16px 18px; display: grid; gap: 14px; background: color-mix(in srgb, var(--warn-soft) 40%, var(--surface)); }
+.reviewer h4 { font-size: 14px; color: var(--warn); }
+.reviewer ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.reviewer .code-block { border: 1px solid var(--line); border-radius: 6px; max-height: 460px; }
+.send-box { border: 1.5px solid var(--accent); border-radius: 10px; background: var(--surface); padding: 20px; display: grid; gap: 12px; box-shadow: var(--shadow); }
+.send-h { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.send-h h2 { font-size: 18px; }
+.sub-code { width: 100%; height: 88px; resize: vertical; font-family: var(--mono); font-size: 12px; line-height: 1.5; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--code-bg); color: var(--ink); word-break: break-all; }
+.send-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+#subNote { color: var(--ok); }
+.section-h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.section-h h2 { font-size: 20px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 12px 16px; gap: 12px; }
+  .qlist { grid-auto-flow: column; grid-auto-columns: minmax(52px, 1fr); overflow-x: auto; }
+  .qbtn { grid-template-columns: 1fr; justify-items: center; padding: 6px; gap: 2px; }
+  .qmeta, .legend, .side-time { display: none; }
+  .qflag { font-size: 11px; }
+  .main { padding-inline: 16px; padding-block: 20px 40px; }
+  .io { grid-template-columns: 1fr; }
+  .rev-grid { grid-template-columns: 1fr; }
+  .summary-top { grid-template-columns: 1fr; }
+  .score-cell { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 560px) {
+  .topbar { padding-inline: 12px; gap: 10px; }
+  .brand .c { display: none; }
+  .timer .clock { font-size: 18px; }
+  .intro-head, .intro-body { padding-left: 20px; padding-right: 20px; }
+  .facts { grid-template-columns: 1fr; }
+  .meta-grid { grid-template-columns: 1fr 1fr; }
+  #submitTop .full { display: none; }
+}
+.vault { padding-inline: 16px; padding-block: 28px 64px; }
+.vault-inner { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+.vault-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.vault-head h1 { font-size: 26px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 18px; display: grid; gap: 2px; }
+.stat .v { font-family: var(--mono); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.import { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 12px; }
+.import textarea { width: 100%; height: 84px; resize: vertical; font-family: var(--mono); font-size: 12px; line-height: 1.5; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--code-bg); color: var(--ink); word-break: break-all; }
+.import textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+.preview { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; display: grid; gap: 10px; }
+.preview .kv { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; }
+.preview .kv b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.msg-err { color: var(--bad); font-size: 13.5px; }
+.msg-ok { color: var(--ok); font-size: 13.5px; }
+.toolbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.toolbar .input { height: 36px; min-width: 0; width: 260px; max-width: 100%; }
+.select { height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.score-table tbody tr { cursor: pointer; }
+.score-table tbody tr:hover td { background: var(--surface-2); }
+.score-table td.name { font-weight: 500; white-space: normal; min-width: 140px; }
+.empty-state { padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 6px; background: var(--surface); }
+.gate { max-width: 560px; margin: 60px auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 28px; display: grid; gap: 10px; }
+.review-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; }
+.review-panel textarea { width: 100%; min-height: 96px; resize: vertical; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.review-panel textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.savebar { position: sticky; bottom: env(safe-area-inset-bottom, 0px); z-index: 10; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--warn); background: var(--warn-soft); color: var(--warn); font-weight: 500; box-shadow: var(--shadow); }
+.dec-advance { background: var(--ok-soft); color: var(--ok); }
+.dec-hold { background: var(--warn-soft); color: var(--warn); }
+.dec-reject { background: var(--bad-soft); color: var(--bad); }
+@media (max-width: 700px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+
+<div id="app"><div class="vault"><div class="vault-inner"><p class="muted">Loading stored results…</p></div></div></div>
+
+<script src="exercises.js"></script>
+<script src="key.js"></script>
+<script>
+(() => {
+'use strict';
+const { Q, TOTAL_POINTS, CP_POINTS, TOTAL_SECONDS, esc, fmtClock, fmtDur, highlight } = window.PSA;
+const $ = s => document.querySelector(s);
+const DECISIONS = { '': 'Undecided', advance: 'Advance', hold: 'Hold', reject: 'Reject' };
+
+let db = null;            // db namespace, or null when unavailable
+let access = 'loading';   // loading | ok | nodb | noaccess
+let rows = [];            // [{id, data}]
+let loaded = false;
+let listError = '';
+let view = { name: 'list', id: null };
+let search = '', sortBy = 'newest';
+let imp = { text: '', busy: false, err: '', preview: null, exists: false, saved: '' };
+let draft = null, dirty = false, saving = false, saveErr = '';
+let modal = null;
+let unsub = null;
+
+/* ---------- boot ---------- */
+async function boot() {
+  const [dbNs, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+  db = dbNs;
+  if (!db) { access = 'nodb'; return render(); }
+  const canEdit = user ? await user.canEdit() : false;
+  if (user && !canEdit) { access = 'noaccess'; return render(); }
+  access = 'ok';
+  render();
+  unsub = db.collection('results').orderBy('importedAt', 'desc').onSnapshot(snap => {
+    rows = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+    loaded = true; listError = '';
+    if (view.name === 'detail' && !dirty) {
+      const r = rows.find(x => x.id === view.id);
+      draft = r ? clone(r.data) : null;
+    }
+    keepScroll(render);
+  }, e => { listError = errText(e); loaded = true; render(); });
+}
+if (window.claude && typeof window.claude.use === 'function') boot();
+else { access = 'nodb'; render(); }
+
+const clone = o => JSON.parse(JSON.stringify(o));
+function keepScroll(fn) { const y = window.scrollY; fn(); window.scrollTo(0, y); }
+function errText(e) {
+  const c = e && e.code;
+  if (c === 'quota_exceeded') return 'The vault is full (5,000 stored results). Delete old results to make room.';
+  if (c === 'invalid_argument') return 'Only the owner and editors of this page can change stored results.';
+  if (c === 'resource_exhausted') return 'Too many requests at once. Wait a few seconds and try again.';
+  if (c === 'revoked' || c === 'not_granted') return 'Access to stored results was withdrawn for this view. Reload the page.';
+  return 'The results store did not respond. Try again in a moment.';
+}
+const fmtDate = t => t ? new Date(t).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const timeUsed = d => d.startedAt && d.submittedAt ? Math.min(TOTAL_SECONDS, Math.max(0, (d.submittedAt - d.startedAt) / 1000)) : null;
+const decisionPill = k => k ? `<span class="pill dec-${k}">${DECISIONS[k]}</span>` : '<span class="pill neutral">Undecided</span>';
+
+/* ---------- render ---------- */
+function render() {
+  let html;
+  if (access === 'loading') html = `<div class="vault"><div class="vault-inner"><p class="muted">Loading stored results…</p></div></div>`;
+  else if (access === 'nodb') html = gate('Stored results are not available here', 'Open this page from your claude.ai account (signed in) to see and add stored results. The candidate test itself does not need this page.');
+  else if (access === 'noaccess') html = gate('This page is for the hiring team', 'Only the owner and editors of this page can see stored assessment results. Ask the owner for editor access if you review candidates.');
+  else if (view.name === 'detail') html = viewDetail();
+  else html = viewList();
+  $('#app').innerHTML = html + (modal ? viewModal() : '');
+  bind();
+}
+function gate(title, text) {
+  return `<div class="vault"><div class="gate"><span class="label">Results vault</span><h2 style="font-size:20px">${esc(title)}</h2><p class="muted">${esc(text)}</p></div></div>`;
+}
+
+function summarize(d) {
+  const R = PSA.scoreAll(d.answers || {}, d.overrides || {});
+  return { R, used: timeUsed(d), answered: Q.filter(q => PSA.qState(q, (d.answers || {})[q.id]) === 'done').length };
+}
+
+function viewList() {
+  const all = rows.map(r => ({ ...r, s: summarize(r.data) }));
+  const scores = all.map(r => r.s.R.total);
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const pending = all.filter(r => !r.data.decision).length;
+  const q = search.trim().toLowerCase();
+  let list = all.filter(r => !q || (r.data.candidate || '').toLowerCase().includes(q) || (r.data.notes || '').toLowerCase().includes(q));
+  if (sortBy === 'score') list.sort((a, b) => b.s.R.total - a.s.R.total);
+  else if (sortBy === 'name') list.sort((a, b) => (a.data.candidate || '~').localeCompare(b.data.candidate || '~'));
+  else if (sortBy === 'submitted') list.sort((a, b) => (b.data.submittedAt || 0) - (a.data.submittedAt || 0));
+
+  const body = list.map(r => {
+    const d = r.data, R = r.s.R;
+    return `<tr data-open="${esc(r.id)}" tabindex="0" aria-label="Open ${esc(d.candidate || 'unnamed candidate')}">
+      <td class="name">${d.candidate ? esc(d.candidate) : '<span class="muted">Unnamed</span>'}</td>
+      <td>${fmtDate(d.submittedAt)}</td>
+      <td class="n"><b>${R.total}</b> / ${TOTAL_POINTS}</td>
+      <td class="n">${R.cp} / ${CP_POINTS}</td>
+      <td class="n">${R.code} / ${TOTAL_POINTS - CP_POINTS}</td>
+      <td class="n">${r.s.used === null ? '—' : fmtClock(r.s.used)}</td>
+      <td>${decisionPill(d.decision)} ${R.overridden ? '<span class="pill warn">Adjusted</span>' : ''} ${d.autoSubmitted ? '<span class="pill neutral">Timed out</span>' : ''}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="vault"><div class="vault-inner">
+    <div class="vault-head">
+      <div style="display:grid;gap:4px">
+        <span class="label">PowerShell Practical Assessment</span>
+        <h1>Results vault</h1>
+        <p class="muted small" style="max-width:64ch">Private to you and your editors. Paste a candidate's submission code to store it; stored results stay here until you delete them.</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="label">Stored results</span><span class="v">${all.length}</span></div>
+      <div class="stat"><span class="label">Average score</span><span class="v">${avg === null ? '—' : avg}</span></div>
+      <div class="stat"><span class="label">Best score</span><span class="v">${scores.length ? Math.max(...scores) : '—'}</span></div>
+      <div class="stat"><span class="label">Awaiting decision</span><span class="v">${pending}</span></div>
+    </div>
+    ${viewImport()}
+    <section style="display:grid;gap:12px">
+      <div class="toolbar">
+        <h2 style="font-size:18px">Candidates</h2>
+        <div class="row">
+          <input class="input" id="search" type="search" placeholder="Search name or notes" aria-label="Search candidates" value="${esc(search)}">
+          <select class="select" id="sortBy" aria-label="Sort by">
+            <option value="newest" ${sortBy === 'newest' ? 'selected' : ''}>Recently added</option>
+            <option value="submitted" ${sortBy === 'submitted' ? 'selected' : ''}>Recently submitted</option>
+            <option value="score" ${sortBy === 'score' ? 'selected' : ''}>Highest score</option>
+            <option value="name" ${sortBy === 'name' ? 'selected' : ''}>Name</option>
+          </select>
+          <button class="btn sm" id="copyCsv" ${all.length ? '' : 'disabled'}>Copy as CSV</button>
+        </div>
+      </div>
+      <span class="small" id="csvNote" aria-live="polite"></span>
+      ${listError ? `<p class="msg-err">${esc(listError)}</p>` : ''}
+      <div class="card-table">
+        ${!loaded ? '<div class="empty-state">Loading…</div>'
+          : !all.length ? '<div class="empty-state"><b style="color:var(--ink)">No results stored yet</b><span>When a candidate finishes, they copy a submission code from their results screen and send it to you. Paste it above.</span></div>'
+          : !list.length ? '<div class="empty-state">No candidates match your search.</div>'
+          : `<table class="score-table"><thead><tr><th>Candidate</th><th>Submitted</th><th class="n">Score</th><th class="n">Checkpoints</th><th class="n">Code</th><th class="n">Time used</th><th>Status</th></tr></thead><tbody>${body}</tbody></table>`}
+      </div>
+    </section>
+  </div></div>`;
+}
+
+function viewImport() {
+  const p = imp.preview;
+  let prev = '';
+  if (p) {
+    const R = PSA.scoreAll(p.answers, {});
+    const used = timeUsed(p);
+    prev = `<div class="preview">
+      <div class="kv">
+        <span>Candidate: <b>${p.candidate ? esc(p.candidate) : 'unnamed'}</b></span>
+        <span>Submitted: <b>${fmtDate(p.submittedAt)}</b></span>
+        <span>Score: <b>${R.total} / ${TOTAL_POINTS}</b></span>
+        <span>Time used: <b>${used === null ? '—' : fmtClock(used)}</b></span>
+        ${p.autoSubmitted ? '<span class="pill neutral">Timed out</span>' : ''}
+      </div>
+      ${p.candidate ? '' : `<label class="small" style="display:grid;gap:4px;max-width:320px">Name this candidate<input class="input" id="impName" placeholder="Candidate name" value="${esc(imp.name || '')}"></label>`}
+      ${imp.exists
+        ? `<div class="row between"><span class="small">This submission is already stored.</span><button class="btn sm" data-open="${esc(p.attemptId)}">Open stored result</button></div>`
+        : `<div class="row"><button class="btn primary sm" id="impSave" ${imp.busy ? 'disabled' : ''}>${imp.busy ? 'Saving…' : 'Save to vault'}</button><button class="btn ghost sm" id="impCancel">Discard</button></div>`}
+    </div>`;
+  }
+  return `<section class="import" aria-labelledby="impTitle">
+    <div class="row between"><h2 id="impTitle" style="font-size:16px">Add a submission</h2><span class="muted small">Codes start with PSA1.</span></div>
+    <textarea id="impText" spellcheck="false" aria-label="Submission code" placeholder="Paste the submission code the candidate sent you">${esc(imp.text)}</textarea>
+    <div class="row"><button class="btn sm" id="impCheck" ${imp.busy ? 'disabled' : ''}>Read code</button>
+      ${imp.err ? `<span class="msg-err">${esc(imp.err)}</span>` : ''}
+      ${imp.saved ? `<span class="msg-ok">${esc(imp.saved)}</span>` : ''}</div>
+    ${prev}
+  </section>`;
+}
+
+function viewDetail() {
+  if (!draft) {
+    return `<div class="vault"><div class="vault-inner"><button class="btn sm" id="back" style="justify-self:start">← All candidates</button>
+      <p class="muted">${loaded ? 'This result is no longer stored.' : 'Loading…'}</p></div></div>`;
+  }
+  const d = draft, ov = d.overrides || {};
+  const { R, used, answered } = summarize(d);
+  const cpW = R.cp / TOTAL_POINTS * 100, codeW = R.code / TOTAL_POINTS * 100;
+
+  const scoreRows = Q.map((q, i) => {
+    const r = R.per[i], a = d.answers[q.id] || {};
+    const st = PSA.qState(q, a);
+    return `<tr>
+      <td>${i + 1}. ${esc(q.short)}</td>
+      <td>${st === 'done' ? '<span class="pill ok">Answered</span>' : st === 'partial' ? '<span class="pill warn">Partial</span>' : '<span class="pill bad">No answer</span>'}</td>
+      <td class="n">${r.cp} / ${q.checkpoint.points}</td>
+      <td class="n">${r.code} / ${q.points - q.checkpoint.points}${r.overridden ? ' <span class="pill warn" style="height:18px">adj.</span>' : ''}</td>
+      <td class="n"><b>${r.total}</b> / ${q.points}</td>
+      <td class="n" ${a.spent > q.minutes * 90 ? 'style="color:var(--warn)"' : ''}>${fmtDur(a.spent)} <span class="muted">/ ${q.minutes}m</span></td>
+    </tr>`;
+  }).join('');
+
+  const reviews = Q.map((q, i) => {
+    const r = R.per[i], a = d.answers[q.id] || {}, qov = ov[q.id] || {};
+    const work = PSA.hasWork(q, a);
+    const choiceTxt = a.choice === null || a.choice === undefined ? '<span class="muted">No answer</span>' : esc(q.checkpoint.options[a.choice]);
+    const rub = q.rubric.map((item, k) => {
+      const changed = (item.id in qov) && !!qov[item.id] !== r.auto[k];
+      return `<li><input type="checkbox" data-ov="${q.id}:${item.id}" id="ov_${q.id}_${item.id}" ${r.hits[k] ? 'checked' : ''}><label for="ov_${q.id}_${item.id}">${esc(item.label)}${changed ? `<span class="ovr">adjusted (auto: ${r.auto[k] ? 'yes' : 'no'})</span>` : ''}</label><span class="pts">${r.hits[k] ? item.pts : 0}/${item.pts}</span></li>`;
+    }).join('');
+    return `<details class="review-q" open>
+      <summary>
+        <div class="sum-l"><span class="caret">▸</span><h3>${i + 1}. ${esc(q.title)}</h3></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${a.flagged ? '<span class="pill warn">⚑ Flagged by candidate</span>' : ''}
+          <span class="pill ${r.total >= q.points * .7 ? 'ok' : r.total >= q.points * .4 ? 'warn' : 'bad'}">${r.total} / ${q.points}</span></div>
+      </summary>
+      <div class="review-body">
+        <div class="rev-grid">
+          <div class="rev-col">
+            <span class="label">Candidate code</span>
+            <div class="answer-code">${work ? `<pre class="code-block">${highlight(String(a.code).replace(/\s+$/, ''))}</pre>` : `<div class="empty-answer">${q.id === 'q4' ? 'Starter script left unchanged.' : 'No code submitted.'}</div>`}</div>
+          </div>
+          <div class="rev-col">
+            <span class="label">Checkpoint · ${q.checkpoint.points} pts</span>
+            <div class="cp-result">
+              <div>${r.cpOk ? '<span class="pill ok">Correct</span>' : a.choice === null || a.choice === undefined ? '<span class="pill neutral">Unanswered</span>' : '<span class="pill bad">Incorrect</span>'}</div>
+              <div><span class="muted">Answer given:</span> ${choiceTxt}</div>
+              ${!r.cpOk ? `<div><span class="muted">Correct:</span> ${esc(q.checkpoint.options[q.checkpoint.answer])}</div>` : ''}
+              <div class="muted small">${esc(q.checkpoint.why)}</div>
+            </div>
+            <span class="label">Code rubric · tick to adjust</span>
+            <ul class="rubric">${rub}</ul>
+            ${Object.keys(qov).length ? `<button class="btn sm ghost" data-resetov="${q.id}" style="justify-self:start">Reset to automatic</button>` : ''}
+          </div>
+        </div>
+        <div class="reviewer">
+          <h4>Reference</h4>
+          <div class="rev-grid">
+            <div class="rev-col"><span class="label">Expected solution</span><pre class="code-block">${highlight(q.solution)}</pre></div>
+            <div class="rev-col">
+              <span class="label">Common mistakes</span><ul>${q.mistakes.map(m => `<li>${m}</li>`).join('')}</ul>
+              <span class="label">What a strong answer looks like</span><p class="small">${q.strong}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>`;
+  }).join('');
+
+  return `<div class="vault"><div class="vault-inner">
+    <div class="row between">
+      <button class="btn sm" id="back">← All candidates</button>
+      <div class="row">
+        <button class="btn sm" id="copyMd">Copy as Markdown</button>
+        <button class="btn sm" id="delBtn" style="color:var(--bad)">Delete result</button>
+      </div>
+    </div>
+    <span class="small" id="mdNote" aria-live="polite"></span>
+    <div style="display:grid;gap:6px">
+      <span class="label">Candidate</span>
+      <h1 style="font-size:26px">${d.candidate ? esc(d.candidate) : 'Unnamed candidate'}</h1>
+      <p class="muted small">Submitted ${fmtDate(d.submittedAt)}${d.autoSubmitted ? ' (time ran out, submitted automatically)' : ''} · added to the vault ${fmtDate(d.importedAt)}${d.updatedAt ? ` · last reviewed ${fmtDate(d.updatedAt)}` : ''}</p>
+    </div>
+    <section class="summary">
+      <div class="summary-top">
+        <div class="score-cell">
+          <span class="label">${R.overridden ? 'Reviewer-adjusted score' : 'Automatic score'}</span>
+          <div class="score-big tabnums">${R.total}<small> / ${TOTAL_POINTS}</small></div>
+          <p class="score-note">${R.overridden ? 'Includes your rubric adjustments.' : 'Confirm the code rubric below; tick or untick lines to adjust.'}</p>
+        </div>
+        <div class="meta-cell">
+          <div class="split">
+            <div class="split-bar" role="img" aria-label="Score split: ${R.cp} checkpoint points, ${R.code} code points"><span class="a" style="width:${cpW}%"></span><span class="b" style="width:${codeW}%"></span></div>
+            <div class="split-legend"><span><i style="background:var(--ok)"></i>Checkpoints <b style="color:var(--ink)">${R.cp}</b> / ${CP_POINTS}</span><span><i style="background:var(--accent)"></i>Code <b style="color:var(--ink)">${R.code}</b> / ${TOTAL_POINTS - CP_POINTS}</span></div>
+          </div>
+          <div class="meta-grid">
+            <div><span class="label">Time used</span><span class="v">${used === null ? '—' : fmtClock(used)} <span class="muted" style="font-weight:400;font-size:13px">of 30:00</span></span></div>
+            <div><span class="label">Fully answered</span><span class="v">${answered} / ${Q.length}</span></div>
+            <div><span class="label">Checkpoints correct</span><span class="v">${R.per.filter(r => r.cpOk).length} / ${Q.length}</span></div>
+            <div><span class="label">Decision</span><span class="v" style="font-size:14px">${decisionPill(d.decision)}</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="review-panel" aria-labelledby="revTitle">
+      <h2 id="revTitle" style="font-size:16px">Your review</h2>
+      <div class="row">
+        <label class="label" for="decision">Decision</label>
+        <select class="select" id="decision">${Object.entries(DECISIONS).map(([k, v]) => `<option value="${k}" ${(d.decision || '') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      </div>
+      <label class="label" for="notes">Notes</label>
+      <textarea id="notes" placeholder="Strengths, concerns, follow-up questions for the interview">${esc(d.notes || '')}</textarea>
+    </section>
+    <section style="display:grid;gap:12px">
+      <h2 style="font-size:18px">Score breakdown</h2>
+      <div class="card-table"><table class="score-table">
+        <thead><tr><th>Exercise</th><th>Status</th><th class="n">Checkpoint</th><th class="n">Code</th><th class="n">Total</th><th class="n">Time spent</th></tr></thead>
+        <tbody>${scoreRows}</tbody>
+        <tfoot><tr><td>Total</td><td></td><td class="n">${R.cp} / ${CP_POINTS}</td><td class="n">${R.code} / ${TOTAL_POINTS - CP_POINTS}</td><td class="n">${R.total} / ${TOTAL_POINTS}</td><td class="n">${fmtDur(Q.reduce((s, q) => s + ((d.answers[q.id] || {}).spent || 0), 0))}</td></tr></tfoot>
+      </table></div>
+    </section>
+    <section style="display:grid;gap:12px">
+      <h2 style="font-size:18px">Answers</h2>
+      ${reviews}
+    </section>
+    <div class="savebar" id="savebar" ${dirty || saveErr ? '' : 'hidden'}>
+      <span id="saveMsg">${saveErr ? esc(saveErr) : 'You have unsaved review changes.'}</span>
+      <div class="row"><button class="btn sm" id="discard">Discard</button><button class="btn primary sm" id="saveReview" ${saving ? 'disabled' : ''}>${saving ? 'Saving…' : 'Save review'}</button></div>
+    </div>
+  </div></div>`;
+}
+
+function viewModal() {
+  if (modal.type === 'delete') {
+    return `<div class="modal-bg" id="modalBg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h3 id="mTitle">Delete this result?</h3>
+      <p>${esc(draft && draft.candidate ? draft.candidate : 'This candidate')}'s answers, score, decision and notes are removed from the vault for everyone. You can add it again later only if you still have the submission code.</p>
+      ${modal.err ? `<p class="msg-err">${esc(modal.err)}</p>` : ''}
+      <div class="actions"><button class="btn" id="mCancel">Cancel</button><button class="btn danger" id="mConfirm">Delete result</button></div>
+    </div></div>`;
+  }
+  if (modal.type === 'leave') {
+    return `<div class="modal-bg" id="modalBg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h3 id="mTitle">Leave without saving?</h3>
+      <p>Your changes to the rubric, decision or notes for this candidate have not been saved.</p>
+      <div class="actions"><button class="btn" id="mCancel">Keep editing</button><button class="btn danger" id="mConfirm">Discard changes</button></div>
+    </div></div>`;
+  }
+  return '';
+}
+
+/* ---------- behaviour ---------- */
+function bind() {
+  const on = (s, ev, fn) => { const el = $(s); if (el) el.addEventListener(ev, fn); };
+  document.querySelectorAll('[data-open]').forEach(el => {
+    const open = () => openDetail(el.dataset.open);
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  });
+  on('#search', 'input', e => { search = e.target.value; const pos = e.target.selectionStart; render(); const s = $('#search'); s.focus(); s.setSelectionRange(pos, pos); });
+  on('#sortBy', 'change', e => { sortBy = e.target.value; render(); });
+  on('#copyCsv', 'click', copyCsv);
+
+  on('#impText', 'input', e => { imp.text = e.target.value; });
+  on('#impCheck', 'click', readCode);
+  on('#impName', 'input', e => { imp.name = e.target.value.slice(0, 80); });
+  on('#impSave', 'click', saveImport);
+  on('#impCancel', 'click', () => { imp = { text: '', busy: false, err: '', preview: null, exists: false, saved: '' }; render(); });
+
+  on('#back', 'click', () => { if (dirty) { modal = { type: 'leave' }; render(); } else closeDetail(); });
+  on('#copyMd', 'click', copyMarkdown);
+  on('#delBtn', 'click', () => { modal = { type: 'delete' }; render(); $('#mCancel')?.focus(); });
+  on('#decision', 'change', e => { draft.decision = e.target.value; markDirty(); keepScroll(render); });
+  on('#notes', 'input', e => { draft.notes = e.target.value.slice(0, 20000); markDirty(); });
+  document.querySelectorAll('[data-ov]').forEach(cb => cb.addEventListener('change', () => {
+    const [qid, iid] = cb.dataset.ov.split(':');
+    const q = Q.find(x => x.id === qid);
+    const autoVal = PSA.autoRubric(q, draft.answers[qid])[q.rubric.findIndex(r => r.id === iid)];
+    draft.overrides = draft.overrides || {};
+    const qov = draft.overrides[qid] = draft.overrides[qid] || {};
+    if (cb.checked === autoVal) delete qov[iid]; else qov[iid] = cb.checked;
+    if (!Object.keys(qov).length) delete draft.overrides[qid];
+    markDirty(); keepScroll(render);
+  }));
+  document.querySelectorAll('[data-resetov]').forEach(b => b.addEventListener('click', () => {
+    if (draft.overrides) delete draft.overrides[b.dataset.resetov];
+    markDirty(); keepScroll(render);
+  }));
+  on('#saveReview', 'click', saveReview);
+  on('#discard', 'click', () => { discardDraft(); keepScroll(render); });
+
+  on('#mCancel', 'click', () => { modal = null; render(); });
+  on('#modalBg', 'click', e => { if (e.target.id === 'modalBg') { modal = null; render(); } });
+  on('#mConfirm', 'click', async () => {
+    if (modal.type === 'leave') { modal = null; closeDetail(); }
+    else if (modal.type === 'delete') {
+      try { await db.collection('results').doc(view.id).delete(); modal = null; dirty = false; closeDetail(); }
+      catch (e) { modal.err = errText(e); render(); }
+    }
+  });
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal) { modal = null; render(); } });
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+function markDirty() {
+  dirty = true; saveErr = '';
+  const bar = $('#savebar'); if (bar) { bar.hidden = false; $('#saveMsg').textContent = 'You have unsaved review changes.'; }
+}
+function discardDraft() {
+  const r = rows.find(x => x.id === view.id);
+  draft = r ? clone(r.data) : null; dirty = false; saveErr = '';
+}
+function openDetail(id) {
+  const r = rows.find(x => x.id === id);
+  if (!r) return;
+  view = { name: 'detail', id };
+  draft = clone(r.data); dirty = false; saveErr = '';
+  render(); window.scrollTo(0, 0);
+}
+function closeDetail() {
+  view = { name: 'list', id: null }; draft = null; dirty = false; saveErr = '';
+  render(); window.scrollTo(0, 0);
+}
+
+async function readCode() {
+  imp.err = ''; imp.saved = ''; imp.preview = null; imp.exists = false; imp.busy = true; render();
+  try {
+    const p = await PSA.decodeSubmission(imp.text);
+    const snap = await db.collection('results').doc(p.attemptId).get();
+    imp.preview = p; imp.exists = snap.exists; imp.name = '';
+  } catch (e) {
+    imp.err = e && e.code ? errText(e) : (e && e.message) || 'The code could not be read.';
+  }
+  imp.busy = false; render();
+}
+async function saveImport() {
+  const p = imp.preview; if (!p) return;
+  imp.busy = true; imp.err = ''; render();
+  const candidate = p.candidate || (imp.name || '').trim();
+  const R = PSA.scoreAll(p.answers, {});
+  try {
+    await db.collection('results').doc(p.attemptId).set({
+      attemptId: p.attemptId, candidate, startedAt: p.startedAt, submittedAt: p.submittedAt,
+      autoSubmitted: p.autoSubmitted, answers: p.answers,
+      overrides: {}, decision: '', notes: '',
+      autoScore: R.total, score: R.total,
+      importedAt: Date.now(), updatedAt: null
+    });
+    imp = { text: '', busy: false, err: '', preview: null, exists: false, saved: `Saved ${candidate || 'the submission'} (${R.total} / ${TOTAL_POINTS}).` };
+  } catch (e) {
+    imp.busy = false; imp.err = errText(e);
+  }
+  render();
+}
+async function saveReview() {
+  if (!draft || saving) return;
+  saving = true; saveErr = ''; keepScroll(render);
+  const body = clone(draft);
+  body.score = PSA.scoreAll(body.answers, body.overrides || {}).total;
+  body.updatedAt = Date.now();
+  try {
+    await db.collection('results').doc(view.id).set(body);
+    draft = body; dirty = false;
+  } catch (e) { saveErr = errText(e); }
+  saving = false; keepScroll(render);
+}
+
+function copyText(txt, noteSel, okMsg) {
+  const note = $(noteSel);
+  const fallback = () => { note.textContent = 'Copying is blocked in this view. Select the text in the page and copy it manually.'; note.className = 'small msg-err'; };
+  try { navigator.clipboard.writeText(txt).then(() => { note.textContent = okMsg; note.className = 'small msg-ok'; }, fallback); } catch (e) { fallback(); }
+}
+function copyCsv() {
+  const cell = v => { const s = String(v === null || v === undefined ? '' : v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const head = ['Candidate', 'Submitted', 'Score', 'Checkpoints', 'Code', 'TimeUsedMin', 'TimedOut', 'Adjusted', 'Decision', ...Q.map((q, i) => `Ex${i + 1}`), 'Notes'];
+  const lines = [head.join(',')].concat(rows.map(r => {
+    const d = r.data, { R, used } = summarize(d);
+    return [d.candidate, d.submittedAt ? new Date(d.submittedAt).toISOString() : '', R.total, R.cp, R.code, used === null ? '' : (used / 60).toFixed(1),
+      d.autoSubmitted ? 'yes' : 'no', R.overridden ? 'yes' : 'no', DECISIONS[d.decision || ''], ...R.per.map(p => p.total), d.notes || ''].map(cell).join(',');
+  }));
+  copyText(lines.join('\n'), '#csvNote', `Copied ${rows.length} result${rows.length === 1 ? '' : 's'} as CSV. Paste into Excel or Google Sheets.`);
+}
+function copyMarkdown() {
+  const d = draft, { R } = summarize(d);
+  const out = [`# ${d.candidate || 'Unnamed candidate'} - PowerShell assessment`,
+    `Submitted: ${d.submittedAt ? new Date(d.submittedAt).toISOString() : '-'}${d.autoSubmitted ? ' (timed out)' : ''}`,
+    `Score: ${R.total}/${TOTAL_POINTS}${R.overridden ? ' (reviewer-adjusted)' : ''} - checkpoints ${R.cp}/${CP_POINTS}, code ${R.code}/${TOTAL_POINTS - CP_POINTS}`,
+    `Decision: ${DECISIONS[d.decision || '']}`, d.notes ? `\nNotes:\n${d.notes}` : '', ''];
+  Q.forEach((q, i) => {
+    const r = R.per[i], a = d.answers[q.id] || {};
+    out.push(`## ${i + 1}. ${q.title} [${r.total}/${q.points}] time ${fmtDur(a.spent)}`);
+    out.push(`Checkpoint: ${a.choice === null || a.choice === undefined ? 'unanswered' : q.checkpoint.options[a.choice]} -> ${r.cpOk ? 'correct' : 'incorrect'}`);
+    q.rubric.forEach((item, k) => out.push(`  [${r.hits[k] ? 'x' : ' '}] ${item.label} (${item.pts})`));
+    out.push('```powershell', PSA.hasWork(q, a) ? String(a.code).replace(/\s+$/, '') : '# no answer', '```', '');
+  });
+  copyText(out.join('\n'), '#mdNote', 'Copied as Markdown.');
+}
+})();
+</script>
